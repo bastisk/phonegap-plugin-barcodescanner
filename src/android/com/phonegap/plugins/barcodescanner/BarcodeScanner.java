@@ -28,6 +28,11 @@ import com.google.zxing.client.android.CaptureActivity;
 import com.google.zxing.client.android.encode.EncodeActivity;
 import com.google.zxing.client.android.Intents;
 
+// Imports for the persistance fix
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
+import android.preference.PreferenceManager;
+
 /**
  * This calls out to the ZXing barcode reader and returns the result.
  *
@@ -216,6 +221,7 @@ public class BarcodeScanner extends CordovaPlugin {
      */
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this.cordova.getActivity().getApplicationContext());
         if (requestCode == REQUEST_CODE && this.callbackContext != null) {
             if (resultCode == Activity.RESULT_OK) {
                 JSONObject obj = new JSONObject();
@@ -223,6 +229,11 @@ public class BarcodeScanner extends CordovaPlugin {
                     obj.put(TEXT, intent.getStringExtra("SCAN_RESULT"));
                     obj.put(FORMAT, intent.getStringExtra("SCAN_RESULT_FORMAT"));
                     obj.put(CANCELLED, false);
+                    
+                    Editor edit = sharedPreferences.edit();
+                    edit.putString("barcode-plugin-result", intent.getStringExtra("SCAN_RESULT"));
+                    edit.commit();
+                    
                 } catch (JSONException e) {
                     Log.d(LOG_TAG, "This should never happen");
                 }
@@ -234,6 +245,10 @@ public class BarcodeScanner extends CordovaPlugin {
                     obj.put(TEXT, "");
                     obj.put(FORMAT, "");
                     obj.put(CANCELLED, true);
+                    
+                    Editor edit = sharedPreferences.edit();
+                    edit.putString("barcode-plugin-result", "cancelled");
+                    edit.commit();
                 } catch (JSONException e) {
                     Log.d(LOG_TAG, "This should never happen");
                 }
@@ -324,5 +339,7 @@ public class BarcodeScanner extends CordovaPlugin {
     public void onRestoreStateForActivityResult(Bundle state, CallbackContext callbackContext) {
         this.callbackContext = callbackContext;
     }
+    
+
 
 }
